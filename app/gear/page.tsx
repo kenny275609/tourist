@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ActivityIntro from "@/components/ActivityIntro";
+import GearList from "@/components/GearList";
+import SharedGearClaim from "@/components/SharedGearClaim";
 import Navigation from "@/components/Navigation";
-import Auth from "@/components/Auth";
 import UserProfile from "@/components/UserProfile";
 import { useAuth } from "@/hooks/useAuth";
-import { User } from "lucide-react";
+import Auth from "@/components/Auth";
 
-export default function Home() {
+export default function GearPage() {
   const { user, loading } = useAuth();
   const [supabaseConfigured, setSupabaseConfigured] = useState(true);
 
   useEffect(() => {
-    // 檢查 Supabase 是否已配置（只在客戶端檢查）
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     
@@ -31,20 +30,6 @@ export default function Home() {
           </h2>
           <p className="text-lg text-[#34495e] mb-4">
             請先設定 Supabase 環境變數才能使用此應用程式。
-          </p>
-          <div className="bg-[#f8f9fa] p-4 rounded-lg mb-4">
-            <p className="text-sm font-semibold text-[#2c3e50] mb-2">
-              請執行以下步驟：
-            </p>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-[#5a6c7d]">
-              <li>在 Supabase 建立專案</li>
-              <li>建立 <code className="bg-white px-2 py-1 rounded">.env.local</code> 檔案</li>
-              <li>設定 <code className="bg-white px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> 和 <code className="bg-white px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
-              <li>執行 SQL 腳本建立數據表</li>
-            </ol>
-          </div>
-          <p className="text-sm text-[#5a6c7d]">
-            詳細說明請參考 <code className="bg-[#f8f9fa] px-2 py-1 rounded">SUPABASE_SETUP.md</code>
           </p>
         </div>
       </div>
@@ -69,25 +54,47 @@ export default function Home() {
       }}>
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#2c3e50] transform -rotate-1">武陵四秀3日遊</h1>
-          {user && <UserProfile />}
+          {user && (
+            <UserProfile />
+          )}
         </div>
       </div>
 
       <div className="py-6 px-4">
         <div className="max-w-md mx-auto space-y-8">
-          {/* 認證區 */}
           {!user ? (
             <section>
-              <h2 className="text-2xl font-bold mb-6 text-[#2c3e50] text-center">
-                歡迎使用
+              <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-[#2c3e50] text-center">
+                請先登入
               </h2>
               <Auth />
             </section>
           ) : (
             <>
-              {/* 活動介紹 */}
+              <UserProfile />
               <section>
-                <ActivityIntro />
+                <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-[#2c3e50] text-center">
+                  裝備清點
+                </h2>
+                
+                {/* 個人裝備清單 */}
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold mb-4 text-[#34495e] text-center">
+                    👤 個人裝備
+                  </h3>
+                  <GearList />
+                </div>
+
+                {/* 共同裝備認領區 */}
+                <div className="mt-12">
+                  <h3 className="text-2xl font-bold mb-4 text-[#34495e] text-center">
+                    👥 共同裝備認領區
+                  </h3>
+                  <p className="text-center text-lg text-[#5a6c7d] mb-6">
+                    以下物品為團隊共同使用，請成員認領背負責任
+                  </p>
+                  <SharedGearClaim />
+                </div>
               </section>
             </>
           )}
@@ -99,3 +106,4 @@ export default function Home() {
     </div>
   );
 }
+
