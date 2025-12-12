@@ -40,6 +40,54 @@ export default function ParticipantList() {
   useEffect(() => {
     const loadParticipants = async () => {
       try {
+        // 優先使用 RPC 函數獲取參與者列表（推薦方法）
+        // 這個函數會繞過 RLS 限制，因為它使用 SECURITY DEFINER
+        let participantsList: Participant[] = [];
+        
+        try {
+          const { data: participantsData, error: participantsError } = await supabase.rpc('get_participants_list');
+          if (!participantsError && participantsData && participantsData.length > 0) {
+            // 直接使用 RPC 函數返回的數據
+            participantsData.forEach((participant: any) => {
+              // 處理角色值（可能是字符串）
+              const roleValue = typeof participant.role === 'string' 
+                ? participant.role.replace(/"/g, '') // 移除可能的引號
+                : participant.role;
+              
+              if (roleValue && roleNames[roleValue]) {
+                const roleInfo = roleNames[roleValue];
+                participantsList.push({
+                  user_id: participant.user_id,
+                  name: participant.display_name || participant.email?.split('@')[0] || '未知用戶',
+                  email: participant.email || '',
+                  role: roleValue,
+                  role_name: roleInfo.name,
+                });
+              }
+            });
+            
+            // 按角色排序
+            const roleOrder = ["leader", "chef", "photographer", "traveler"];
+            participantsList.sort((a, b) => {
+              const aIndex = roleOrder.indexOf(a.role);
+              const bIndex = roleOrder.indexOf(b.role);
+              if (aIndex === -1 && bIndex === -1) return 0;
+              if (aIndex === -1) return 1;
+              if (bIndex === -1) return -1;
+              return aIndex - bIndex;
+            });
+            
+            setParticipants(participantsList);
+            setLoading(false);
+            return;
+          } else if (participantsError) {
+            console.log("get_participants_list 函數錯誤:", participantsError);
+          }
+        } catch (rpcError) {
+          console.log("get_participants_list 不可用，使用備用方法", rpcError);
+        }
+        
+        // 備用方法：從 user_data 表查詢（需要 RLS 政策允許查看 user_role）
         // 1. 獲取所有已選擇角色的用戶
         const { data: roleData, error: roleError } = await supabase
           .from("user_data")
@@ -48,6 +96,10 @@ export default function ParticipantList() {
 
         if (roleError) {
           console.error("Error loading roles:", roleError);
+          // 如果 RLS 政策不允許，提示用戶
+          if (roleError.message?.includes('permission') || roleError.message?.includes('policy')) {
+            console.error("RLS 政策可能不允許查看其他用戶的角色數據。請執行 supabase/allow_public_view_user_roles.sql");
+          }
           setLoading(false);
           return;
         }
