@@ -3,11 +3,13 @@
 import { createClient } from "@/lib/supabase/client";
 import { LogOut, User, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export default function UserProfile() {
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const { isAdmin } = useAdmin();
   const supabase = createClient();
 
   useEffect(() => {
@@ -97,20 +99,23 @@ export default function UserProfile() {
       }}>
         <User className="w-5 h-5 text-white" />
       </div>
-      <button
-        onClick={handleDeleteAccount}
-        disabled={isDeleting}
-        className="px-3 py-1 bg-white text-[#e74c3c] hover:bg-[#fee] transition-colors flex items-center gap-1 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{
-          border: '2px dashed #e74c3c',
-          borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
-          transform: 'rotate(1deg)',
-        }}
-        title="刪除帳號（測試用）"
-      >
-        <Trash2 className="w-3 h-3" />
-        <span className="hidden sm:inline">{isDeleting ? "刪除中..." : "刪除帳號"}</span>
-      </button>
+      {/* 只有管理員才顯示刪除帳號按鈕 */}
+      {isAdmin && (
+        <button
+          onClick={handleDeleteAccount}
+          disabled={isDeleting}
+          className="px-3 py-1 bg-white text-[#e74c3c] hover:bg-[#fee] transition-colors flex items-center gap-1 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            border: '2px dashed #e74c3c',
+            borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
+            transform: 'rotate(1deg)',
+          }}
+          title="刪除帳號（僅管理員）"
+        >
+          <Trash2 className="w-3 h-3" />
+          <span className="hidden sm:inline">{isDeleting ? "刪除中..." : "刪除帳號"}</span>
+        </button>
+      )}
       <button
         onClick={handleSignOut}
         className="px-3 py-1 bg-white text-[#2c3e50] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 text-xs font-semibold"

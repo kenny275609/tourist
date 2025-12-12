@@ -61,7 +61,24 @@ export default function ParticipantList() {
         // 2. 獲取用戶信息
         const participantsList: Participant[] = [];
         
-        // 獲取當前登入用戶信息
+        // 嘗試使用 get_members_list 函數獲取所有用戶信息（推薦方法）
+        let membersMap = new Map<string, { name: string; email: string }>();
+        try {
+          const { data: membersData } = await supabase.rpc('get_members_list');
+          if (membersData) {
+            membersData.forEach((member: any) => {
+              membersMap.set(member.user_id, {
+                name: member.display_name || member.email?.split('@')[0] || '未知用戶',
+                email: member.email || '',
+              });
+            });
+          }
+        } catch (rpcError) {
+          // 如果 RPC 函數不可用，使用備用方法
+          console.log("RPC 函數不可用，使用備用方法獲取用戶信息");
+        }
+
+        // 獲取當前登入用戶信息（作為備用）
         const { data: { user: currentUser } } = await supabase.auth.getUser();
 
         for (const item of roleData) {
@@ -77,22 +94,26 @@ export default function ParticipantList() {
           const role = roleValue as string;
           const roleInfo = roleNames[role];
 
-          // 獲取用戶資料（從 user_profiles 表）
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("display_name")
-            .eq("user_id", item.user_id)
-            .single();
-
           let name = "";
           let email = "";
 
-          // 如果是當前用戶，可以獲取完整信息
-          if (currentUser && item.user_id === currentUser.id) {
-            email = currentUser.email || item.user_id.substring(0, 8) + "...";
-            name = currentUser.user_metadata?.name || profile?.display_name || email.split('@')[0];
+          // 優先從 membersMap 獲取（使用 get_members_list）
+          const memberInfo = membersMap.get(item.user_id);
+          if (memberInfo) {
+            name = memberInfo.name;
+            email = memberInfo.email;
+          } else if (currentUser && item.user_id === currentUser.id) {
+            // 如果是當前用戶，從 auth 獲取
+            email = currentUser.email || "";
+            name = currentUser.user_metadata?.name || email.split('@')[0] || "未知用戶";
           } else {
-            // 對於其他用戶，優先使用 profile 的 display_name
+            // 備用方法：從 user_profiles 獲取
+            const { data: profile } = await supabase
+              .from("user_profiles")
+              .select("display_name")
+              .eq("user_id", item.user_id)
+              .single();
+            
             name = profile?.display_name || item.user_id.substring(0, 8) + "...";
             email = item.user_id.substring(0, 8) + "...";
           }

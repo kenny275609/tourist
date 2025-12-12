@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
-import { Shield, User, Check, X, Loader2 } from "lucide-react";
+import { Shield, User, Check, X, Loader2, Trash2 } from "lucide-react";
 
 interface UserPermission {
   user_id: string;
@@ -21,6 +21,7 @@ export default function UserPermissionManager() {
   const [users, setUsers] = useState<UserPermission[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -360,6 +361,62 @@ export default function UserPermissionManager() {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    // 確認對話框
+    const confirmed = window.confirm(
+      `⚠️ 確定要刪除用戶「${userName}」的帳號嗎？\n\n此操作無法復原，將刪除：\n- 該用戶的所有個人數據\n- 該用戶的裝備清單\n- 該用戶的帳號資訊\n\n確定要繼續嗎？`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // 二次確認
+    const doubleConfirmed = window.confirm(
+      `最後確認：您真的要刪除用戶「${userName}」的帳號嗎？\n\n此操作無法復原！`
+    );
+
+    if (!doubleConfirmed) {
+      return;
+    }
+
+    setDeleting(userId);
+
+    try {
+      // 調用管理員專用的刪除用戶 RPC 函數
+      const { error } = await supabase.rpc('delete_user_by_admin', {
+        target_user_id: userId
+      });
+
+      if (error) {
+        // 如果 RPC 函數不存在，使用備用方法
+        if (error.message.includes('function') && error.message.includes('does not exist')) {
+          console.warn("RPC 函數 delete_user_by_admin 不存在，使用備用方法");
+          
+          // 備用方法：直接刪除用戶數據（但無法刪除 auth.users）
+          await supabase.from("user_gear_items").delete().eq("user_id", userId);
+          await supabase.from("user_data").delete().eq("user_id", userId);
+          await supabase.from("user_roles").delete().eq("user_id", userId);
+          await supabase.from("user_profiles").delete().eq("user_id", userId);
+          
+          alert(`✅ 用戶「${userName}」的所有數據已刪除！\n\n請在 Supabase Dashboard > Authentication > Users 中手動刪除該用戶的認證帳號。\n\n或者執行 supabase/delete_user_by_admin.sql 腳本來創建 RPC 函數。`);
+        } else {
+          throw error;
+        }
+      } else {
+        alert(`✅ 用戶「${userName}」的帳號及所有數據已成功刪除！`);
+      }
+
+      // 重新載入用戶列表
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      alert(`刪除用戶失敗：${error?.message || "請稍後再試"}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   if (!isAdmin) return null;
 
   if (loading) {
@@ -455,34 +512,54 @@ export default function UserPermissionManager() {
                       無法修改
                     </span>
                   ) : (
-                    <button
-                      onClick={() =>
-                        toggleAdminPermission(user.user_id, user.is_admin)
-                      }
-                      disabled={isUpdating}
-                      className={`washi-tape-button px-4 py-2 text-sm font-semibold transition-colors flex items-center gap-2 ${
-                        user.is_admin
-                          ? "bg-[#e74c3c] text-white hover:bg-[#c0392b]"
-                          : "bg-[#27ae60] text-white hover:bg-[#229954]"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {isUpdating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>處理中...</span>
-                        </>
-                      ) : user.is_admin ? (
-                        <>
-                          <X className="w-4 h-4" />
-                          <span>移除管理員</span>
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>設為管理員</span>
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button
+                        onClick={() =>
+                          toggleAdminPermission(user.user_id, user.is_admin)
+                        }
+                        disabled={isUpdating || deleting === user.user_id}
+                        className={`washi-tape-button px-4 py-2 text-sm font-semibold transition-colors flex items-center gap-2 ${
+                          user.is_admin
+                            ? "bg-[#e74c3c] text-white hover:bg-[#c0392b]"
+                            : "bg-[#27ae60] text-white hover:bg-[#229954]"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {isUpdating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>處理中...</span>
+                          </>
+                        ) : user.is_admin ? (
+                          <>
+                            <X className="w-4 h-4" />
+                            <span>移除管理員</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>設為管理員</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.user_id, user.name || user.email.split("@")[0] || "用戶")}
+                        disabled={deleting === user.user_id || isUpdating}
+                        className="washi-tape-button px-3 py-2 text-sm font-semibold bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        title="刪除用戶帳號"
+                      >
+                        {deleting === user.user_id ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>刪除中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-3 h-3" />
+                            <span>刪除</span>
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
