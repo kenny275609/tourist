@@ -19,10 +19,11 @@ BEGIN
     u.email::TEXT as email,
     -- 優先順序：user_profiles.display_name > user_metadata.name > email 前綴
     -- 確保正確處理 UTF-8 字符編碼
+    -- 使用 COALESCE 和 NULLIF 來處理空值和空白字符串
     COALESCE(
-      NULLIF(TRIM(up.display_name), ''), 
-      NULLIF(TRIM(u.raw_user_meta_data->>'name'), ''),
-      split_part(u.email, '@', 1)
+      NULLIF(TRIM(COALESCE(up.display_name, '')), ''), 
+      NULLIF(TRIM(COALESCE(u.raw_user_meta_data->>'name', '')), ''),
+      split_part(COALESCE(u.email, ''), '@', 1)
     )::TEXT as display_name,
     -- 從 user_data 獲取角色，處理 JSONB 值（可能是字符串或對象）
     CASE 

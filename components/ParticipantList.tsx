@@ -47,8 +47,20 @@ export default function ParticipantList() {
         try {
           const { data: participantsData, error: participantsError } = await supabase.rpc('get_participants_list');
           if (!participantsError && participantsData && participantsData.length > 0) {
+            // 添加調試日誌
+            console.log("RPC 函數返回的數據:", participantsData);
+            
             // 直接使用 RPC 函數返回的數據
             participantsData.forEach((participant: any) => {
+              // 添加調試日誌
+              console.log("處理參與者:", {
+                user_id: participant.user_id,
+                email: participant.email,
+                display_name: participant.display_name,
+                display_name_type: typeof participant.display_name,
+                role: participant.role
+              });
+              
               // 處理角色值（可能是字符串）
               const roleValue = typeof participant.role === 'string' 
                 ? participant.role.replace(/"/g, '').trim() // 移除可能的引號和空白
@@ -59,19 +71,32 @@ export default function ParticipantList() {
                 
                 // 處理用戶名稱，確保正確顯示
                 let displayName = '';
+                
+                // 優先使用 display_name
                 if (participant.display_name) {
-                  // 確保是字符串且去除空白
-                  displayName = String(participant.display_name).trim();
+                  const rawName = participant.display_name;
+                  // 處理各種可能的格式
+                  if (typeof rawName === 'string') {
+                    displayName = rawName.trim();
+                  } else if (rawName !== null && rawName !== undefined) {
+                    displayName = String(rawName).trim();
+                  }
                 }
                 
-                // 如果 display_name 為空或只有空白，使用 email 前綴
+                // 如果 display_name 為空或只有空白，嘗試從 email 獲取
                 if (!displayName || displayName.length === 0) {
-                  displayName = participant.email?.split('@')[0] || '未知用戶';
+                  if (participant.email) {
+                    displayName = participant.email.split('@')[0];
+                  } else {
+                    displayName = '未知用戶';
+                  }
                 }
+                
+                console.log("最終顯示名稱:", displayName);
                 
                 participantsList.push({
                   user_id: participant.user_id,
-                  name: displayName || '未知用戶',
+                  name: displayName,
                   email: participant.email || '',
                   role: roleValue,
                   role_name: roleInfo.name,
