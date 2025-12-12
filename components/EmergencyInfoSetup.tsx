@@ -135,15 +135,18 @@ export default function EmergencyInfoSetup() {
     // 如果已鎖定但管理員不允許編輯，則不能儲存
     if (!user || (isLocked && !canEdit)) {
       console.log("Cannot save:", { user: !!user, isLocked, canEdit });
+      if (!user) {
+        alert("請先登入");
+      }
       return;
     }
 
     setSaving(true);
     try {
-      // 檢查用戶是否已登入
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) {
-        throw new Error("用戶未登入");
+      // 直接使用 useAuth 提供的 user，不需要重新獲取
+      const currentUser = user;
+      if (!currentUser || !currentUser.id) {
+        throw new Error("用戶未登入，請重新整理頁面後再試");
       }
 
       console.log("Saving emergency info:", { user_id: currentUser.id, info: emergencyInfo });
