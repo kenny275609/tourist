@@ -20,10 +20,10 @@ export default function TeamInviteTicket({ inviteCode = "WL4SHOW" }: TeamInviteT
     return `#${inviteCode}`;
   };
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(`#${inviteCode}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // 獲取使用者名字
+  const getUserName = () => {
+    if (!user) return "朋友";
+    return user.user_metadata?.name || user.email?.split("@")[0] || "朋友";
   };
 
   const handleCopyLink = async () => {
@@ -39,7 +39,8 @@ export default function TeamInviteTicket({ inviteCode = "WL4SHOW" }: TeamInviteT
 
   const handleShare = async () => {
     const link = getInviteLink();
-    const text = `邀請你加入武陵四秀3日遊！邀請碼：${inviteCode}\n${link}`;
+    const userName = getUserName();
+    const text = `${userName} 邀請你加入武陵四秀3日遊！\n${link}`;
     
     if (navigator.share) {
       try {
@@ -62,37 +63,19 @@ export default function TeamInviteTicket({ inviteCode = "WL4SHOW" }: TeamInviteT
     return null;
   }
 
+  const userName = getUserName();
+
   return (
     <div className="sketch-box p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-dashed border-[#3498db] transform -rotate-1">
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-[#2c3e50]">邀請隊友</span>
-          <span className="text-sm text-[#5a6c7d]">(Invite):</span>
-        </div>
-        
-        {/* 邀請碼 */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <code className="px-3 py-1 bg-white border-2 border-[#3498db] text-[#2c3e50] font-mono font-bold" style={{
-            borderRadius: '255px 15px 225px 15px / 15px 225px 15px 255px',
-          }}>
-            #{inviteCode}
-          </code>
-          <button
-            onClick={handleCopyCode}
-            className="washi-tape-button px-3 py-1 flex items-center gap-1 text-sm font-semibold text-[#2c3e50] bg-white border-2 border-[#bdc3c7] hover:bg-[#ecf0f1]"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>已複製</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                <span>複製代碼</span>
-              </>
-            )}
-          </button>
+        {/* 歡迎訊息 */}
+        <div className="text-center">
+          <p className="text-lg font-bold text-[#2c3e50] mb-1">
+            歡迎，<span className="text-[#3498db]">{userName}</span>！
+          </p>
+          <p className="text-sm text-[#5a6c7d]">
+            邀請你的朋友一起加入武陵四秀3日遊
+          </p>
         </div>
 
         {/* 邀請鏈接 */}
@@ -104,16 +87,27 @@ export default function TeamInviteTicket({ inviteCode = "WL4SHOW" }: TeamInviteT
             </code>
             <button
               onClick={handleCopyLink}
-              className="washi-tape-button px-2 py-1 flex items-center gap-1 text-xs font-semibold text-[#2c3e50] bg-white border border-[#bdc3c7] hover:bg-[#ecf0f1]"
+              className="washi-tape-button px-3 py-1 flex items-center gap-1 text-xs font-semibold text-[#2c3e50] bg-white border border-[#bdc3c7] hover:bg-[#ecf0f1]"
             >
-              <Copy className="w-3 h-3" />
+              {copied ? (
+                <>
+                  <Check className="w-3 h-3" />
+                  <span>已複製</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" />
+                  <span>複製</span>
+                </>
+              )}
             </button>
             {typeof navigator !== "undefined" && "share" in navigator && (
               <button
                 onClick={handleShare}
-                className="washi-tape-button px-2 py-1 flex items-center gap-1 text-xs font-semibold text-[#2c3e50] bg-white border border-[#bdc3c7] hover:bg-[#ecf0f1]"
+                className="washi-tape-button px-3 py-1 flex items-center gap-1 text-xs font-semibold text-[#2c3e50] bg-white border border-[#bdc3c7] hover:bg-[#ecf0f1]"
               >
                 <Share2 className="w-3 h-3" />
+                <span>分享</span>
               </button>
             )}
           </div>

@@ -11,7 +11,7 @@ ORDER BY created_at DESC;
 
 DO $$
 DECLARE
-  target_email TEXT := 'your-email@example.com';  -- ⬅️ 在這裡填入您的 email
+  target_email TEXT := 'mjib850529@gmail.com';  -- ⬅️ 在這裡填入您的 email
   user_uuid UUID;
 BEGIN
   -- 找到用戶 ID

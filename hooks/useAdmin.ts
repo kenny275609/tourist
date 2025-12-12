@@ -20,11 +20,33 @@ export function useAdmin() {
       return;
     }
 
-    // 從 user_metadata 檢查是否為管理者
-    const adminStatus = user.user_metadata?.is_admin === true;
-    setIsAdmin(adminStatus);
-    setLoading(false);
-  }, [user]);
+    const checkAdminStatus = async () => {
+      try {
+        // 方法 1：從 user_metadata 檢查（優先）
+        const metadataAdmin = user.user_metadata?.is_admin === true;
+        
+        // 方法 2：從 user_roles 表檢查（備用）
+        const { data: roleData, error } = await supabase
+          .from("user_roles")
+          .select("is_admin")
+          .eq("user_id", user.id)
+          .single();
+        
+        const roleAdmin = roleData?.is_admin === true;
+        
+        // 只要其中一個為 true，就是管理員
+        setIsAdmin(metadataAdmin || roleAdmin);
+      } catch (error) {
+        // 如果 user_roles 表不存在，只使用 metadata
+        const metadataAdmin = user.user_metadata?.is_admin === true;
+        setIsAdmin(metadataAdmin);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, supabase]);
 
   return { isAdmin, loading };
 }

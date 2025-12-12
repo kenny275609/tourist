@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import AdminGearTemplateManager from "@/components/AdminGearTemplateManager";
 import TripSettingsManager from "@/components/TripSettingsManager";
 import MemberList from "@/components/MemberList";
+import AdminUnlockControl from "@/components/AdminUnlockControl";
+import UserPermissionManager from "@/components/UserPermissionManager";
 import Navigation from "@/components/Navigation";
 import UserProfile from "@/components/UserProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -107,6 +109,22 @@ export default function AdminPage() {
               團隊成員
             </h2>
             <MemberList />
+          </section>
+
+          {/* 用戶權限管理 */}
+          <section>
+            <h2 className="text-2xl font-bold mb-6 text-[#2c3e50] text-center">
+              用戶權限管理
+            </h2>
+            <UserPermissionManager />
+          </section>
+
+          {/* 管理員解鎖控制 */}
+          <section>
+            <h2 className="text-2xl font-bold mb-6 text-[#2c3e50] text-center">
+              編輯權限管理
+            </h2>
+            <AdminUnlockControl />
           </section>
 
           {/* 行程設定 */}

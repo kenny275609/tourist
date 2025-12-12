@@ -2,19 +2,20 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, Calendar, Package, Settings, FolderOpen } from "lucide-react";
+import { Home, Calendar, Package, Settings, FolderOpen, Users } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 
 export default function Navigation() {
   const pathname = usePathname();
   const { isAdmin } = useAdmin();
 
-  const navItems = [
-    { href: "/", label: "介紹", icon: FolderOpen },
-    { href: "/itinerary", label: "行程", icon: Calendar },
-    { href: "/gear", label: "裝備", icon: Package },
-    ...(isAdmin ? [{ href: "/admin", label: "設定", icon: Settings }] : []),
-  ];
+      const navItems = [
+        { href: "/", label: "介紹", icon: FolderOpen },
+        { href: "/itinerary", label: "行程", icon: Calendar },
+        { href: "/gear", label: "裝備", icon: Package },
+        { href: "/members", label: "成員", icon: Users },
+        ...(isAdmin ? [{ href: "/admin", label: "管理", icon: Settings }] : []),
+      ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-[#2c3e50] z-50" style={{

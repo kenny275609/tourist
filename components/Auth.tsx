@@ -13,6 +13,51 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
+  // 將錯誤訊息轉換為友善的中文說明
+  const translateError = (errorMessage: string, isSignUp: boolean): string => {
+    const lowerMessage = errorMessage.toLowerCase();
+
+    // 註冊相關錯誤
+    if (isSignUp) {
+      if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("email_not_confirmed")) {
+        return "註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。";
+      }
+      if (lowerMessage.includes("user already registered") || lowerMessage.includes("already registered")) {
+        return "此 Email 已經註冊過了，請直接登入。";
+      }
+      if (lowerMessage.includes("password") && lowerMessage.includes("weak")) {
+        return "密碼強度不足，請使用更複雜的密碼。";
+      }
+      if (lowerMessage.includes("invalid email")) {
+        return "Email 格式不正確，請檢查後再試。";
+      }
+    }
+
+    // 登入相關錯誤
+    if (!isSignUp) {
+      if (lowerMessage.includes("invalid login credentials") || lowerMessage.includes("invalid credentials")) {
+        return "Email 或密碼錯誤，請檢查後再試。";
+      }
+      if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("email_not_confirmed")) {
+        return "請先確認您的 Email。請檢查收件匣中的確認郵件，點擊連結後即可登入。";
+      }
+      if (lowerMessage.includes("too many requests")) {
+        return "登入嘗試次數過多，請稍後再試。";
+      }
+    }
+
+    // 通用錯誤
+    if (lowerMessage.includes("network") || lowerMessage.includes("fetch")) {
+      return "網路連線問題，請檢查網路後再試。";
+    }
+    if (lowerMessage.includes("timeout")) {
+      return "連線逾時，請稍後再試。";
+    }
+
+    // 如果沒有匹配的錯誤，返回原始訊息（但如果是英文，嘗試翻譯常見詞彙）
+    return errorMessage;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,7 +69,7 @@ export default function Auth() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(translateError(error.message, false));
     }
     setLoading(false);
   };
@@ -45,7 +90,7 @@ export default function Auth() {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(translateError(signUpError.message, true));
     } else if (data.user) {
       // 註冊成功後自動登入
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -53,7 +98,16 @@ export default function Auth() {
         password,
       });
       if (signInError) {
-        setError(signInError.message);
+        // 如果是 Email 未確認的錯誤，顯示友善訊息
+        if (signInError.message.toLowerCase().includes("email not confirmed") || 
+            signInError.message.toLowerCase().includes("email_not_confirmed")) {
+          setError("註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。");
+        } else {
+          setError(translateError(signInError.message, false));
+        }
+      } else {
+        // 登入成功，清除錯誤訊息
+        setError(null);
       }
     }
     setLoading(false);

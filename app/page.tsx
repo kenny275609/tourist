@@ -6,11 +6,12 @@ import Navigation from "@/components/Navigation";
 import Auth from "@/components/Auth";
 import UserProfile from "@/components/UserProfile";
 import { useAuth } from "@/hooks/useAuth";
-import { User } from "lucide-react";
+import { User, CheckCircle, X } from "lucide-react";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const [supabaseConfigured, setSupabaseConfigured] = useState(true);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     // 檢查 Supabase 是否已配置（只在客戶端檢查）
@@ -19,6 +20,25 @@ export default function Home() {
     
     if (!url || !key || url.includes('placeholder') || key.includes('placeholder')) {
       setSupabaseConfigured(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // 檢查 URL 參數，如果有 confirmed=true，顯示成功訊息
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const confirmed = urlParams.get('confirmed');
+      
+      if (confirmed === 'true') {
+        setShowSuccessMessage(true);
+        // 5 秒後自動隱藏
+        const timer = setTimeout(() => {
+          setShowSuccessMessage(false);
+          // 清除 URL 參數
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 
@@ -75,6 +95,32 @@ export default function Home() {
 
       <div className="py-6 px-4">
         <div className="max-w-md mx-auto space-y-8">
+          {/* 成功註冊通知 */}
+          {showSuccessMessage && (
+            <div className="sketch-box p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-[#27ae60] transform rotate-1 relative">
+              <button
+                onClick={() => {
+                  setShowSuccessMessage(false);
+                  window.history.replaceState({}, '', window.location.pathname);
+                }}
+                className="absolute top-2 right-2 text-[#27ae60] hover:text-[#229954] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-start gap-3 pr-6">
+                <CheckCircle className="w-6 h-6 text-[#27ae60] flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-bold text-[#27ae60] mb-1">
+                    🎉 恭喜您註冊成功！
+                  </h3>
+                  <p className="text-sm text-[#2c3e50]">
+                    您的 Email 已成功確認，現在可以開始使用所有功能了！
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 認證區 */}
           {!user ? (
             <section>
