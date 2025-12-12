@@ -61,21 +61,37 @@ export default function ParticipantList() {
         // 2. 獲取用戶信息
         const participantsList: Participant[] = [];
         
-        // 嘗試使用 get_members_list 函數獲取所有用戶信息（推薦方法）
+        // 嘗試使用 get_participants_list 函數獲取所有參與者信息（推薦方法）
+        // 這個函數不需要管理員權限，所有用戶都可以使用
         let membersMap = new Map<string, { name: string; email: string }>();
         try {
-          const { data: membersData } = await supabase.rpc('get_members_list');
-          if (membersData) {
-            membersData.forEach((member: any) => {
-              membersMap.set(member.user_id, {
-                name: member.display_name || member.email?.split('@')[0] || '未知用戶',
-                email: member.email || '',
+          const { data: participantsData, error: participantsError } = await supabase.rpc('get_participants_list');
+          if (!participantsError && participantsData) {
+            participantsData.forEach((participant: any) => {
+              membersMap.set(participant.user_id, {
+                name: participant.display_name || participant.email?.split('@')[0] || '未知用戶',
+                email: participant.email || '',
               });
             });
+          } else if (participantsError) {
+            console.log("get_participants_list 函數錯誤:", participantsError);
           }
         } catch (rpcError) {
-          // 如果 RPC 函數不可用，使用備用方法
-          console.log("RPC 函數不可用，使用備用方法獲取用戶信息");
+          // 如果 RPC 函數不可用，嘗試使用 get_members_list（需要管理員權限）
+          console.log("get_participants_list 不可用，嘗試使用 get_members_list");
+          try {
+            const { data: membersData } = await supabase.rpc('get_members_list');
+            if (membersData) {
+              membersData.forEach((member: any) => {
+                membersMap.set(member.user_id, {
+                  name: member.display_name || member.email?.split('@')[0] || '未知用戶',
+                  email: member.email || '',
+                });
+              });
+            }
+          } catch (membersError) {
+            console.log("get_members_list 也不可用，使用備用方法獲取用戶信息");
+          }
         }
 
         // 獲取當前登入用戶信息（作為備用）

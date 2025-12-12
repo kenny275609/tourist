@@ -1,0 +1,43 @@
+-- 創建函數：獲取活動參與者列表（所有用戶都可以查看）
+-- 這個函數返回所有已選擇角色的用戶信息
+-- 不需要管理員權限，因為參與者信息是公開的
+
+CREATE OR REPLACE FUNCTION get_participants_list()
+RETURNS TABLE (
+  user_id UUID,
+  email TEXT,
+  display_name TEXT,
+  role TEXT
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT DISTINCT
+    u.id as user_id,
+    u.email::TEXT as email,
+    -- 優先順序：user_profiles.display_name > user_metadata.name > email 前綴
+    COALESCE(
+      up.display_name, 
+      u.raw_user_meta_data->>'name', 
+      split_part(u.email, '@', 1)
+    ) as display_name,
+    -- 從 user_data 獲取角色
+    (SELECT value::TEXT 
+     FROM user_data 
+     WHERE user_data.user_id = u.id 
+     AND user_data.key = 'user_role' 
+     LIMIT 1) as role
+  FROM auth.users u
+  LEFT JOIN user_profiles up ON up.user_id = u.id
+  INNER JOIN user_data ud ON ud.user_id = u.id AND ud.key = 'user_role'
+  WHERE ud.value IS NOT NULL
+  ORDER BY u.created_at DESC;
+END;
+$$;
+
+-- 注意：此函數使用 SECURITY DEFINER 權限來訪問 auth.users 表
+-- 所有已登入的用戶都可以調用此函數來查看參與者列表
+-- 在 Supabase Dashboard 的 SQL Editor 中執行此腳本
+
