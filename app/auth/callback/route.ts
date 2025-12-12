@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const token = requestUrl.searchParams.get('token')
   const next = requestUrl.searchParams.get('next') ?? '/'
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   // 處理 Email 確認
   if (token_hash && type) {
