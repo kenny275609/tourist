@@ -110,8 +110,8 @@ export default function ParticipantList() {
           return;
         }
 
-        // 2. 獲取用戶信息
-        const participantsList: Participant[] = [];
+        // 2. 獲取用戶信息（備用方法）
+        participantsList = [];
         
         // 嘗試使用 get_participants_list 函數獲取所有參與者信息（推薦方法）
         // 這個函數不需要管理員權限，所有用戶都可以使用
