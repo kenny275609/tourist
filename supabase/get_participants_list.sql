@@ -18,11 +18,12 @@ BEGIN
     u.id as user_id,
     u.email::TEXT as email,
     -- 優先順序：user_profiles.display_name > user_metadata.name > email 前綴
+    -- 確保正確處理 UTF-8 字符編碼
     COALESCE(
-      up.display_name, 
-      u.raw_user_meta_data->>'name', 
+      NULLIF(TRIM(up.display_name), ''), 
+      NULLIF(TRIM(u.raw_user_meta_data->>'name'), ''),
       split_part(u.email, '@', 1)
-    ) as display_name,
+    )::TEXT as display_name,
     -- 從 user_data 獲取角色，處理 JSONB 值（可能是字符串或對象）
     CASE 
       WHEN jsonb_typeof(ud.value) = 'string' THEN ud.value::TEXT

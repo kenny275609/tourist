@@ -51,14 +51,27 @@ export default function ParticipantList() {
             participantsData.forEach((participant: any) => {
               // 處理角色值（可能是字符串）
               const roleValue = typeof participant.role === 'string' 
-                ? participant.role.replace(/"/g, '') // 移除可能的引號
+                ? participant.role.replace(/"/g, '').trim() // 移除可能的引號和空白
                 : participant.role;
               
               if (roleValue && roleNames[roleValue]) {
                 const roleInfo = roleNames[roleValue];
+                
+                // 處理用戶名稱，確保正確顯示
+                let displayName = '';
+                if (participant.display_name) {
+                  // 確保是字符串且去除空白
+                  displayName = String(participant.display_name).trim();
+                }
+                
+                // 如果 display_name 為空或只有空白，使用 email 前綴
+                if (!displayName || displayName.length === 0) {
+                  displayName = participant.email?.split('@')[0] || '未知用戶';
+                }
+                
                 participantsList.push({
                   user_id: participant.user_id,
-                  name: participant.display_name || participant.email?.split('@')[0] || '未知用戶',
+                  name: displayName || '未知用戶',
                   email: participant.email || '',
                   role: roleValue,
                   role_name: roleInfo.name,
