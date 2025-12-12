@@ -23,12 +23,12 @@ BEGIN
       u.raw_user_meta_data->>'name', 
       split_part(u.email, '@', 1)
     ) as display_name,
-    -- 從 user_data 獲取角色
-    (SELECT value::TEXT 
-     FROM user_data 
-     WHERE user_data.user_id = u.id 
-     AND user_data.key = 'user_role' 
-     LIMIT 1) as role
+    -- 從 user_data 獲取角色，處理 JSONB 值（可能是字符串或對象）
+    CASE 
+      WHEN jsonb_typeof(ud.value) = 'string' THEN ud.value::TEXT
+      WHEN jsonb_typeof(ud.value) = 'object' THEN ud.value::TEXT
+      ELSE ud.value::TEXT
+    END as role
   FROM auth.users u
   LEFT JOIN user_profiles up ON up.user_id = u.id
   INNER JOIN user_data ud ON ud.user_id = u.id AND ud.key = 'user_role'
