@@ -178,15 +178,17 @@ export default function ParticipantList() {
           let name = "";
           let email = "";
 
-          // 優先從 membersMap 獲取（使用 get_members_list）
+          // 優先從 membersMap 獲取（使用 get_participants_list 或 get_members_list）
           const memberInfo = membersMap.get(item.user_id);
           if (memberInfo) {
-            name = memberInfo.name;
-            email = memberInfo.email;
+            // 確保名稱正確處理，去除空白
+            name = String(memberInfo.name || '').trim() || '未知用戶';
+            email = memberInfo.email || '';
           } else if (currentUser && item.user_id === currentUser.id) {
             // 如果是當前用戶，從 auth 獲取
             email = currentUser.email || "";
-            name = currentUser.user_metadata?.name || email.split('@')[0] || "未知用戶";
+            const metadataName = currentUser.user_metadata?.name;
+            name = (metadataName ? String(metadataName).trim() : '') || email.split('@')[0] || "未知用戶";
           } else {
             // 備用方法：從 user_profiles 獲取
             const { data: profile } = await supabase
@@ -195,7 +197,8 @@ export default function ParticipantList() {
               .eq("user_id", item.user_id)
               .single();
             
-            name = profile?.display_name || item.user_id.substring(0, 8) + "...";
+            const profileName = profile?.display_name;
+            name = (profileName ? String(profileName).trim() : '') || item.user_id.substring(0, 8) + "...";
             email = item.user_id.substring(0, 8) + "...";
           }
 
