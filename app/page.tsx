@@ -71,6 +71,26 @@ export default function Home() {
     }
   }, []);
 
+  // 備用方案：檢查用戶的 Email 確認狀態
+  // 如果用戶剛剛確認了 Email（在最近 30 秒內），顯示通知
+  useEffect(() => {
+    if (user && user.email_confirmed_at && !showSuccessMessage) {
+      const confirmedAt = new Date(user.email_confirmed_at).getTime();
+      const now = Date.now();
+      const timeSinceConfirmation = now - confirmedAt;
+      
+      // 如果 Email 在最近 30 秒內確認，顯示通知
+      if (timeSinceConfirmation < 30000) {
+        console.log('User just confirmed email (within 30 seconds), showing success message');
+        setShowSuccessMessage(true);
+        const timer = setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, showSuccessMessage]);
+
   if (!supabaseConfigured) {
     return (
       <div className="min-h-screen bg-[#fef9e7] flex items-center justify-center p-4">
