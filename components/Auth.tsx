@@ -138,9 +138,27 @@ export default function Auth() {
       return;
     }
     
-    // 註冊成功後，手動創建 user_profiles 記錄
-    // 注意：即使創建 user_profiles 失敗，也不應該阻止註冊流程
-    // 因為用戶已經在 auth.users 中成功創建了
+    // 註冊成功後自動登入（先登入，再創建 user_profiles）
+    // 這樣可以確保有有效的 session，RLS 政策才能正常工作
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (signInError) {
+      // 如果是 Email 未確認的錯誤，顯示友善訊息
+      if (signInError.message.toLowerCase().includes("email not confirmed") || 
+          signInError.message.toLowerCase().includes("email_not_confirmed")) {
+        setError("註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。");
+      } else {
+        setError(translateError(signInError.message, false));
+      }
+      setLoading(false);
+      return;
+    }
+    
+    // 登入成功後，創建 user_profiles 記錄
+    // 現在用戶已經有有效的 session，RLS 政策應該可以正常工作
     try {
       const { error: profileError } = await supabase.from("user_profiles").upsert({
         user_id: user.id,
@@ -159,25 +177,9 @@ export default function Auth() {
       // 記錄錯誤但不阻止註冊流程
     }
     
-    // 註冊成功後自動登入
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (signInError) {
-      // 如果是 Email 未確認的錯誤，顯示友善訊息
-      if (signInError.message.toLowerCase().includes("email not confirmed") || 
-          signInError.message.toLowerCase().includes("email_not_confirmed")) {
-        setError("註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。");
-      } else {
-        setError(translateError(signInError.message, false));
-      }
-    } else {
-      // 登入成功，清除錯誤訊息並重新載入頁面
-      setError(null);
-      window.location.reload();
-    }
+    // 登入成功，清除錯誤訊息並重新載入頁面
+    setError(null);
+    window.location.reload();
     setLoading(false);
   };
 
