@@ -106,7 +106,13 @@ export default function Auth() {
     const user = data?.user;
     
     if (signUpError) {
-      // 顯示錯誤訊息
+      // 顯示錯誤訊息，並記錄詳細錯誤以便調試
+      console.error("Sign up error:", signUpError);
+      console.error("Error details:", {
+        message: signUpError.message,
+        status: signUpError.status,
+        name: signUpError.name
+      });
       setError(translateError(signUpError.message, true));
       setLoading(false);
       return;
@@ -133,6 +139,8 @@ export default function Auth() {
     }
     
     // 註冊成功後，手動創建 user_profiles 記錄
+    // 注意：即使創建 user_profiles 失敗，也不應該阻止註冊流程
+    // 因為用戶已經在 auth.users 中成功創建了
     try {
       const { error: profileError } = await supabase.from("user_profiles").upsert({
         user_id: user.id,
@@ -143,11 +151,12 @@ export default function Auth() {
       
       if (profileError) {
         console.error("Error creating user profile:", profileError);
-        // 如果創建 user_profiles 失敗，記錄錯誤但不阻止註冊流程
-        // 因為用戶已經在 auth.users 中創建了
+        // 記錄錯誤但不阻止註冊流程
+        // 用戶可以稍後手動更新 user_profiles，或者管理員可以幫忙創建
       }
-    } catch (profileError) {
+    } catch (profileError: any) {
       console.error("Error creating user profile:", profileError);
+      // 記錄錯誤但不阻止註冊流程
     }
     
     // 註冊成功後自動登入
