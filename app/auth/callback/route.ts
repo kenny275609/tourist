@@ -42,18 +42,37 @@ export async function GET(request: Request) {
       }
 
       // Email 確認成功
-      if (data?.user || data?.session) {
-        // 確認成功，重定向到首頁並顯示成功訊息
+      console.log('Email verification successful:', {
+        hasUser: !!data?.user,
+        hasSession: !!data?.session,
+        userId: data?.user?.id,
+        emailConfirmed: data?.user?.email_confirmed_at
+      })
+
+      // 檢查 session 是否已建立
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        console.log('Session created successfully after verification')
+        // 確認成功且有 session，重定向到首頁並顯示成功訊息
         const redirectUrl = new URL('/', requestUrl.origin)
         redirectUrl.searchParams.set('confirmed', 'true')
         return NextResponse.redirect(redirectUrl)
+      } else if (data?.user) {
+        console.log('User verified but no session, redirecting with login required')
+        // 用戶已確認但沒有 session，需要手動登入
+        const redirectUrl = new URL('/', requestUrl.origin)
+        redirectUrl.searchParams.set('confirmed', 'true')
+        redirectUrl.searchParams.set('login_required', 'true')
+        return NextResponse.redirect(redirectUrl)
+      } else {
+        console.log('Verification successful but no user or session')
+        // 驗證成功但沒有 user 或 session
+        const redirectUrl = new URL('/', requestUrl.origin)
+        redirectUrl.searchParams.set('confirmed', 'true')
+        redirectUrl.searchParams.set('login_required', 'true')
+        return NextResponse.redirect(redirectUrl)
       }
-      
-      // 如果沒有 user 或 session，但沒有錯誤，可能驗證成功但需要手動登入
-      const redirectUrl = new URL('/', requestUrl.origin)
-      redirectUrl.searchParams.set('confirmed', 'true')
-      redirectUrl.searchParams.set('login_required', 'true')
-      return NextResponse.redirect(redirectUrl)
     } catch (error: any) {
       // 如果驗證失敗，記錄錯誤並重定向
       console.error('Email verification exception:', error)

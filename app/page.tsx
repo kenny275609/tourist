@@ -30,7 +30,10 @@ export default function Home() {
       const confirmed = urlParams.get('confirmed');
       const loginRequired = urlParams.get('login_required');
       
+      console.log('Checking URL params:', { confirmed, loginRequired });
+      
       if (confirmed === 'true') {
+        console.log('Showing success message');
         setShowSuccessMessage(true);
         // 5 秒後自動隱藏
         const timer = setTimeout(() => {
