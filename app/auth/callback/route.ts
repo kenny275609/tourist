@@ -85,7 +85,47 @@ export async function GET(request: Request) {
     }
   }
 
-  // 如果沒有 token_hash，可能是直接訪問，檢查 session 是否已確認
+  // 處理舊格式的 token（非 token_hash）
+  const token = requestUrl.searchParams.get('token')
+  if (token && type === 'signup') {
+    console.log('Old format token detected, attempting verification')
+    try {
+      // 嘗試使用舊格式的 token 驗證
+      const { data, error } = await supabase.auth.verifyOtp({
+        type: 'email',
+        token,
+      })
+
+      if (error) {
+        console.error('Token verification error:', error)
+        // 即使驗證失敗，也重定向到首頁
+        const redirectUrl = new URL('/', requestUrl.origin)
+        redirectUrl.searchParams.set('error', 'verification_failed')
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      // 驗證成功
+      if (data?.user || data?.session) {
+        console.log('Token verification successful')
+        const { data: { session } } = await supabase.auth.getSession()
+        const redirectUrl = new URL('/', requestUrl.origin)
+        if (session) {
+          redirectUrl.searchParams.set('confirmed', 'true')
+        } else {
+          redirectUrl.searchParams.set('confirmed', 'true')
+          redirectUrl.searchParams.set('login_required', 'true')
+        }
+        return NextResponse.redirect(redirectUrl)
+      }
+    } catch (error: any) {
+      console.error('Token verification exception:', error)
+      const redirectUrl = new URL('/', requestUrl.origin)
+      redirectUrl.searchParams.set('error', 'verification_error')
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+
+  // 如果沒有 token_hash 或 token，檢查 session 是否已確認
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user?.email_confirmed_at) {
     // 用戶已確認，重定向到首頁並顯示成功訊息
