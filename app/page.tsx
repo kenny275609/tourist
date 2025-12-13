@@ -29,13 +29,27 @@ export default function Home() {
       const urlParams = new URLSearchParams(window.location.search);
       const confirmed = urlParams.get('confirmed');
       const loginRequired = urlParams.get('login_required');
+      const type = urlParams.get('type');
+      const token_hash = urlParams.get('token_hash');
       
       console.log('Checking URL params:', { 
         confirmed, 
         loginRequired,
+        type,
+        hasTokenHash: !!token_hash,
         fullUrl: window.location.href,
         search: window.location.search
       });
+      
+      // 如果 URL 中有 type=email 或 token_hash，表示這是 Email 確認連結
+      // 但沒有經過 callback route，需要重定向到 callback route
+      if ((type === 'email' || token_hash) && !confirmed) {
+        console.log('Email confirmation link detected, redirecting to callback route');
+        const callbackUrl = new URL('/auth/callback', window.location.origin);
+        callbackUrl.search = window.location.search;
+        window.location.href = callbackUrl.toString();
+        return;
+      }
       
       if (confirmed === 'true') {
         console.log('Confirmed is true, showing success message');
