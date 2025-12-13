@@ -1,119 +1,218 @@
-# 武陵四秀 - 登山行程規劃
+# 武陵四秀3日遊 - 登山活動協作平台
 
-一個具有可編輯行程和裝備清單功能的武陵四秀登陸頁面。
+一個專為登山活動設計的協作平台，提供行程管理、裝備清單、成員資訊等功能，採用手繪風格 UI，支援多人即時協作。
 
-## 功能特色
+🌐 **線上版本：** https://tourist-lake-one.vercel.app
 
-- **詳細行程（3天）**：可編輯的垂直時間軸，顯示每天的行程檢查點
-- **智能打包清單**：分類的裝備清單（衣物和必備裝備），支援新增、編輯、刪除和勾選功能
-- **交通資訊**：前往武陵農場的交通方式說明
-- **手繪風格設計**：使用 Patrick Hand 字體和手繪風格的圖標
+---
 
-## 技術棧
+## ✨ 主要功能
 
-- **Next.js 16** - React 框架
-- **TypeScript** - 類型安全
-- **Tailwind CSS** - 樣式設計
-- **Supabase** - 後端服務（認證和數據庫）
-- **Lucide React** - 圖標庫
-- **Patrick Hand** - 手繪風格字體
+- 🎯 **活動介紹** - 倒數計時、海拔剖面圖、活動簡介
+- 📅 **共享行程** - 團隊共享的行程時間軸（管理員可編輯）
+- 🎒 **裝備管理** - 個人裝備清單、共享裝備認領、預設模板
+- 👥 **成員管理** - 成員列表、參與者列表、安全御守、團隊角色
+- 🔐 **權限系統** - 管理員權限、資料鎖定機制
+- 📧 **團隊邀請** - 邀請碼系統、邀請連結分享
+- 🎨 **手繪風格 UI** - 獨特的手繪風格介面設計
 
-## 本地開發
+---
 
-### 1. 安裝依賴
+## 🚀 快速開始
+
+### 1. 環境設定
+
+```bash
+# 複製環境變數範例
+cp env.example .env.local
+
+# 編輯 .env.local，填入 Supabase 資訊
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 2. 安裝依賴
 
 ```bash
 npm install
 ```
 
-### 2. 設定 Supabase
+### 3. 資料庫設定
 
-請參考 [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) 的詳細說明。
+1. 在 Supabase Dashboard 執行 `supabase/schema.sql`
+2. 執行相關的 migration 腳本
+3. 設定 Storage bucket（參考 `STORAGE_SETUP.md`）
 
-快速步驟：
-1. 在 [Supabase](https://supabase.com) 建立專案
-2. 取得 API 金鑰（Project URL 和 anon key）
-3. 建立 `.env.local` 檔案：
+### 4. 設定管理員
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+參考 `ADMIN_SETUP.md` 或執行：
+
+```sql
+-- 設定管理員（替換為您的 Email）
+INSERT INTO user_roles (user_id, is_admin)
+SELECT id, true FROM auth.users WHERE email = 'your-email@example.com'
+ON CONFLICT (user_id) DO UPDATE SET is_admin = true;
 ```
 
-4. 在 Supabase SQL Editor 執行 `supabase/schema.sql` 建立數據表
+### 5. Email 設定
 
-### 3. 啟動開發伺服器
+修改 Supabase Email 模板（參考 `EMAIL_TEMPLATE_MODIFICATION_STEPS.md`）
+
+### 6. 啟動開發伺服器
 
 ```bash
 npm run dev
 ```
 
-在瀏覽器中打開 [http://localhost:3000](http://localhost:3000) 查看結果。
+開啟 [http://localhost:3000](http://localhost:3000) 查看結果。
 
-## 部署到 Vercel
+---
 
-### 方法 1：透過 GitHub 部署（推薦）
+## 📚 文件
 
-1. 將專案推送到 GitHub：
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin <your-github-repo-url>
-   git push -u origin main
-   ```
+### 📖 完整文檔
+- **[系統總整理](SYSTEM_OVERVIEW.md)** - 完整的系統說明與功能介紹
+- **[快速參考指南](QUICK_REFERENCE.md)** - 常用功能快速查找
 
-2. 在 [Vercel](https://vercel.com) 上：
-   - 登入或註冊帳號
-   - 點擊 "New Project"
-   - 選擇你的 GitHub 儲存庫
-   - Vercel 會自動偵測 Next.js 專案並設定部署
-   - 點擊 "Deploy"
+### 🛠️ 設定指南
+- [Supabase 設定](SUPABASE_SETUP.md) - 資料庫完整設定
+- [環境變數設定](ENV_SETUP.md) - 環境變數說明
+- [管理員設定](ADMIN_SETUP.md) - 如何設定管理員
+- [Email 確認設定](EMAIL_CONFIRMATION_SETUP.md) - Email 確認流程
+- [Vercel 部署](VERCEL_DEPLOYMENT.md) - 部署到 Vercel
 
-### 方法 2：使用 Vercel CLI
+### 📱 功能說明
+- [邀請功能指南](INVITE_FEATURE_GUIDE.md) - 團隊邀請使用說明
+- [權限管理](USER_PERMISSION_MANAGEMENT.md) - 用戶權限管理
+- [帳號刪除功能](DELETE_ACCOUNT_FEATURE.md) - 帳號刪除說明
 
-1. 安裝 Vercel CLI：
-   ```bash
-   npm i -g vercel
-   ```
+### 🔧 問題排除
+- [常見問題](TROUBLESHOOTING.md) - 問題排除指南
+- [註冊錯誤修復](FIX_REGISTRATION_ERROR.md)
+- [Email 重定向修復](FIX_EMAIL_REDIRECT_URL.md)
 
-2. 在專案目錄中執行：
-   ```bash
-   vercel
-   ```
+---
 
-3. 按照提示完成部署
-
-## 專案結構
+## 🗂️ 專案結構
 
 ```
 tourist/
-├── app/
-│   ├── layout.tsx      # 根布局（字體設定）
-│   ├── page.tsx        # 主頁面
-│   └── globals.css     # 全域樣式
-├── components/
-│   ├── ItineraryTimeline.tsx  # 行程時間軸組件
-│   ├── GearList.tsx           # 裝備清單組件
-│   └── Transportation.tsx     # 交通資訊組件
-├── vercel.json         # Vercel 部署配置
-└── package.json        # 專案依賴
+├── app/                    # Next.js 頁面
+├── components/             # React 組件
+├── hooks/                  # 自訂 Hooks
+├── lib/supabase/           # Supabase 客戶端
+├── supabase/               # 資料庫腳本
+└── public/                 # 靜態資源
 ```
 
-## 功能說明
+詳細結構請參考 [系統總整理](SYSTEM_OVERVIEW.md)。
 
-### 行程時間軸
-- 顯示 3 天的行程檢查點
-- 每個檢查點可以編輯（點擊鉛筆圖標）或刪除（點擊垃圾桶圖標）
-- 使用垂直時間軸視覺化展示
+---
 
-### 裝備清單
-- 分為兩個類別：衣物（分層系統）和必備裝備
-- 每個項目可以：
-  - 勾選/取消勾選（點擊圓圈）
-  - 編輯名稱（點擊鉛筆圖標）
-  - 刪除（點擊垃圾桶圖標）
-- 底部有「新增物品」按鈕，可以添加新項目
+## 🛠️ 技術棧
 
-## 授權
+- **前端：** Next.js 16, React 19, TypeScript
+- **樣式：** Tailwind CSS
+- **後端：** Supabase (PostgreSQL + Realtime + Storage + Auth)
+- **部署：** Vercel
+- **字體：** Google Fonts (Kiwi Maru, Zen Maru Gothic, Hachi Maru Pop)
 
-MIT License
+---
+
+## 📋 功能清單
+
+### ✅ 已實現
+- [x] 用戶認證（註冊、登入、Email 確認）
+- [x] 活動介紹頁面（倒數計時、海拔圖、邀請票）
+- [x] 共享行程管理（管理員可編輯）
+- [x] 裝備管理（個人、共享、預設模板）
+- [x] 成員資訊（安全御守、團隊角色、參與者列表）
+- [x] 管理員功能（權限管理、設定管理、帳號刪除）
+- [x] 團隊邀請功能
+- [x] 即時同步（Supabase Realtime）
+- [x] 手繪風格 UI
+
+### 🚧 未來規劃
+- [ ] 推播通知系統
+- [ ] 團隊聊天功能
+- [ ] 天氣資訊整合
+- [ ] 地圖路線顯示
+- [ ] 照片分享功能
+- [ ] 費用分攤計算
+
+---
+
+## 🔐 權限說明
+
+### 一般用戶
+- 查看和編輯自己的資料
+- 查看共享行程和裝備
+- 認領共享裝備
+- 填寫個人資訊和選擇角色
+
+### 管理員
+- 所有一般用戶權限
+- 編輯共享行程
+- 管理預設裝備模板
+- 設定行程設定（出發日期、邀請碼等）
+- 授予/撤銷管理員權限
+- 刪除用戶帳號
+- 解鎖用戶已鎖定的資訊
+
+---
+
+## 🚀 部署
+
+### Vercel 部署
+
+1. 連接 GitHub 倉庫到 Vercel
+2. 設定環境變數：
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. 自動部署完成
+
+詳細步驟請參考 [Vercel 部署指南](VERCEL_DEPLOYMENT.md)。
+
+---
+
+## 📝 開發指令
+
+```bash
+# 開發模式
+npm run dev
+
+# 建置生產版本
+npm run build
+
+# 啟動生產伺服器
+npm start
+
+# 檢查程式碼
+npm run lint
+```
+
+---
+
+## 🤝 貢獻
+
+歡迎提交 Issue 或 Pull Request！
+
+---
+
+## 📄 授權
+
+此專案為私人專案。
+
+---
+
+## 📞 技術支援
+
+如遇到問題，請參考：
+- [系統總整理](SYSTEM_OVERVIEW.md)
+- [快速參考指南](QUICK_REFERENCE.md)
+- [問題排除](TROUBLESHOOTING.md)
+
+---
+
+**最後更新：** 2025-01-XX  
+**版本：** 1.0.0
