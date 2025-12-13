@@ -30,13 +30,19 @@ export default function Home() {
       const confirmed = urlParams.get('confirmed');
       const loginRequired = urlParams.get('login_required');
       
-      console.log('Checking URL params:', { confirmed, loginRequired });
+      console.log('Checking URL params:', { 
+        confirmed, 
+        loginRequired,
+        fullUrl: window.location.href,
+        search: window.location.search
+      });
       
       if (confirmed === 'true') {
-        console.log('Showing success message');
+        console.log('Confirmed is true, showing success message');
         setShowSuccessMessage(true);
         // 5 秒後自動隱藏
         const timer = setTimeout(() => {
+          console.log('Hiding success message after 5 seconds');
           setShowSuccessMessage(false);
           // 清除 URL 參數
           const newUrl = new URL(window.location.href);
@@ -45,6 +51,8 @@ export default function Home() {
           window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
         }, 5000);
         return () => clearTimeout(timer);
+      } else {
+        console.log('Confirmed is not true, value:', confirmed, 'type:', typeof confirmed);
       }
     }
   }, []);
@@ -104,13 +112,14 @@ export default function Home() {
         <div className="max-w-md mx-auto space-y-8">
           {/* 成功註冊通知 */}
           {showSuccessMessage && (
-            <div className="sketch-box p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-[#27ae60] transform rotate-1 relative">
+            <div className="sketch-box p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-[#27ae60] transform rotate-1 relative z-50">
               <button
                 onClick={() => {
+                  console.log('Closing success message manually');
                   setShowSuccessMessage(false);
                   window.history.replaceState({}, '', window.location.pathname);
                 }}
-                className="absolute top-2 right-2 text-[#27ae60] hover:text-[#229954] transition-colors"
+                className="absolute top-2 right-2 text-[#27ae60] hover:text-[#229954] transition-colors z-10"
               >
                 <X className="w-5 h-5" />
               </button>

@@ -57,6 +57,7 @@ export async function GET(request: Request) {
         // 確認成功且有 session，重定向到首頁並顯示成功訊息
         const redirectUrl = new URL('/', requestUrl.origin)
         redirectUrl.searchParams.set('confirmed', 'true')
+        console.log('Redirecting to:', redirectUrl.toString())
         return NextResponse.redirect(redirectUrl)
       } else if (data?.user) {
         console.log('User verified but no session, redirecting with login required')
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
         const redirectUrl = new URL('/', requestUrl.origin)
         redirectUrl.searchParams.set('confirmed', 'true')
         redirectUrl.searchParams.set('login_required', 'true')
+        console.log('Redirecting to:', redirectUrl.toString())
         return NextResponse.redirect(redirectUrl)
       } else {
         console.log('Verification successful but no user or session')
@@ -71,6 +73,7 @@ export async function GET(request: Request) {
         const redirectUrl = new URL('/', requestUrl.origin)
         redirectUrl.searchParams.set('confirmed', 'true')
         redirectUrl.searchParams.set('login_required', 'true')
+        console.log('Redirecting to:', redirectUrl.toString())
         return NextResponse.redirect(redirectUrl)
       }
     } catch (error: any) {
