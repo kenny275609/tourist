@@ -22,7 +22,17 @@ export default function Auth() {
       if (lowerMessage.includes("email not confirmed") || lowerMessage.includes("email_not_confirmed")) {
         return "註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。";
       }
-      if (lowerMessage.includes("user already registered") || lowerMessage.includes("already registered")) {
+      // 處理各種「帳號已存在」的錯誤訊息
+      if (
+        lowerMessage.includes("user already registered") || 
+        lowerMessage.includes("already registered") ||
+        lowerMessage.includes("email already registered") ||
+        lowerMessage.includes("email already exists") ||
+        lowerMessage.includes("a user with this email already exists") ||
+        lowerMessage.includes("user already exists") ||
+        lowerMessage.includes("signup_disabled") ||
+        (lowerMessage.includes("email") && lowerMessage.includes("already") && lowerMessage.includes("exist"))
+      ) {
         return "此 Email 已經註冊過了，請直接登入。";
       }
       if (lowerMessage.includes("password") && lowerMessage.includes("weak")) {
