@@ -102,6 +102,9 @@ export default function Auth() {
       },
     });
 
+    // 提取 user 以便類型檢查
+    const user = data?.user;
+    
     if (signUpError) {
       // 檢查是否是 "Database error" 相關的錯誤
       if (signUpError.message.toLowerCase().includes("database error")) {
@@ -110,10 +113,10 @@ export default function Auth() {
         console.warn("Database error during signup, but user might be created:", signUpError);
         
         // 如果用戶已創建，嘗試手動創建 user_profiles
-        if (data?.user) {
+        if (user && user.id) {
           try {
             await supabase.from("user_profiles").upsert({
-              user_id: data.user.id,
+              user_id: user.id,
               display_name: name || null,
             }, {
               onConflict: 'user_id'
@@ -128,11 +131,11 @@ export default function Auth() {
       } else {
         setError(translateError(signUpError.message, true));
       }
-    } else if (data.user) {
+    } else if (user && user.id) {
       // 註冊成功後，手動創建 user_profiles 記錄
       try {
         await supabase.from("user_profiles").upsert({
-          user_id: data.user.id,
+          user_id: user.id,
           display_name: name || null,
         }, {
           onConflict: 'user_id'
