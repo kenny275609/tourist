@@ -47,6 +47,9 @@ export default function Auth() {
     }
 
     // 通用錯誤
+    if (lowerMessage.includes("database error")) {
+      return "資料庫錯誤，請稍後再試或聯繫管理員。";
+    }
     if (lowerMessage.includes("network") || lowerMessage.includes("fetch")) {
       return "網路連線問題，請檢查網路後再試。";
     }
@@ -90,8 +93,45 @@ export default function Auth() {
     });
 
     if (signUpError) {
-      setError(translateError(signUpError.message, true));
+      // 檢查是否是 "Database error" 相關的錯誤
+      if (signUpError.message.toLowerCase().includes("database error")) {
+        // 可能是觸發器問題，但用戶可能已經創建成功
+        // 嘗試繼續流程，並手動創建 user_profiles
+        console.warn("Database error during signup, but user might be created:", signUpError);
+        
+        // 如果用戶已創建，嘗試手動創建 user_profiles
+        if (data?.user) {
+          try {
+            await supabase.from("user_profiles").upsert({
+              user_id: data.user.id,
+              display_name: name || null,
+            }, {
+              onConflict: 'user_id'
+            });
+          } catch (profileError) {
+            console.error("Error creating user profile:", profileError);
+          }
+        }
+        
+        // 顯示友善的錯誤訊息
+        setError("註冊過程中發生資料庫錯誤，但帳號可能已創建。請嘗試登入，或聯繫管理員。");
+      } else {
+        setError(translateError(signUpError.message, true));
+      }
     } else if (data.user) {
+      // 註冊成功後，手動創建 user_profiles 記錄
+      try {
+        await supabase.from("user_profiles").upsert({
+          user_id: data.user.id,
+          display_name: name || null,
+        }, {
+          onConflict: 'user_id'
+        });
+      } catch (profileError) {
+        // 如果創建 user_profiles 失敗，記錄錯誤但不阻止註冊流程
+        console.error("Error creating user profile:", profileError);
+      }
+      
       // 註冊成功後自動登入
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
