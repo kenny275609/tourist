@@ -106,62 +106,68 @@ export default function Auth() {
     const user = data?.user;
     
     if (signUpError) {
-      // 檢查是否是 "Database error" 相關的錯誤
-      if (signUpError.message.toLowerCase().includes("database error")) {
-        // 可能是觸發器問題，但用戶可能已經創建成功
-        // 嘗試繼續流程，並手動創建 user_profiles
-        console.warn("Database error during signup, but user might be created:", signUpError);
-        
-        // 如果用戶已創建，嘗試手動創建 user_profiles
-        if (user && user.id) {
-          try {
-            await supabase.from("user_profiles").upsert({
-              user_id: user.id,
-              display_name: name || null,
-            }, {
-              onConflict: 'user_id'
-            });
-          } catch (profileError) {
-            console.error("Error creating user profile:", profileError);
-          }
-        }
-        
-        // 顯示友善的錯誤訊息
-        setError("註冊過程中發生資料庫錯誤，但帳號可能已創建。請嘗試登入，或聯繫管理員。");
-      } else {
-        setError(translateError(signUpError.message, true));
-      }
-    } else if (user && user.id) {
-      // 註冊成功後，手動創建 user_profiles 記錄
-      try {
-        await supabase.from("user_profiles").upsert({
-          user_id: user.id,
-          display_name: name || null,
-        }, {
-          onConflict: 'user_id'
-        });
-      } catch (profileError) {
-        // 如果創建 user_profiles 失敗，記錄錯誤但不阻止註冊流程
-        console.error("Error creating user profile:", profileError);
-      }
-      
-      // 註冊成功後自動登入
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 顯示錯誤訊息
+      setError(translateError(signUpError.message, true));
+      setLoading(false);
+      return;
+    }
+    
+    // 如果沒有錯誤，檢查用戶是否真的被創建
+    if (!user || !user.id) {
+      setError("註冊失敗，請稍後再試。");
+      setLoading(false);
+      return;
+    }
+    
+    // 檢查用戶是否是新創建的（通過檢查 created_at 是否在最近幾秒內）
+    const userCreatedAt = new Date(user.created_at);
+    const now = new Date();
+    const secondsSinceCreation = (now.getTime() - userCreatedAt.getTime()) / 1000;
+    
+    // 如果用戶是在 10 秒前創建的，可能是已存在的用戶
+    if (secondsSinceCreation > 10) {
+      // 這可能是已存在的用戶，顯示錯誤訊息
+      setError("此 Email 已經註冊過了，請直接登入。");
+      setLoading(false);
+      return;
+    }
+    
+    // 註冊成功後，手動創建 user_profiles 記錄
+    try {
+      const { error: profileError } = await supabase.from("user_profiles").upsert({
+        user_id: user.id,
+        display_name: name || null,
+      }, {
+        onConflict: 'user_id'
       });
-      if (signInError) {
-        // 如果是 Email 未確認的錯誤，顯示友善訊息
-        if (signInError.message.toLowerCase().includes("email not confirmed") || 
-            signInError.message.toLowerCase().includes("email_not_confirmed")) {
-          setError("註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。");
-        } else {
-          setError(translateError(signInError.message, false));
-        }
-      } else {
-        // 登入成功，清除錯誤訊息
-        setError(null);
+      
+      if (profileError) {
+        console.error("Error creating user profile:", profileError);
+        // 如果創建 user_profiles 失敗，記錄錯誤但不阻止註冊流程
+        // 因為用戶已經在 auth.users 中創建了
       }
+    } catch (profileError) {
+      console.error("Error creating user profile:", profileError);
+    }
+    
+    // 註冊成功後自動登入
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (signInError) {
+      // 如果是 Email 未確認的錯誤，顯示友善訊息
+      if (signInError.message.toLowerCase().includes("email not confirmed") || 
+          signInError.message.toLowerCase().includes("email_not_confirmed")) {
+        setError("註冊成功！請檢查您的 Email 收件匣，點擊確認連結後即可登入。");
+      } else {
+        setError(translateError(signInError.message, false));
+      }
+    } else {
+      // 登入成功，清除錯誤訊息並重新載入頁面
+      setError(null);
+      window.location.reload();
     }
     setLoading(false);
   };
