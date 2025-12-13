@@ -148,8 +148,9 @@ export default function Auth() {
       
       console.log("Sign in successful, creating user profile...");
       
-      // 登入成功後，創建 user_profiles 記錄
+      // 登入成功後，嘗試創建 user_profiles 記錄
       // 注意：即使失敗也不應該阻止註冊流程
+      // 如果觸發器已設置，這可能會自動創建，但我們還是嘗試手動創建以確保
       try {
         const { error: profileError, data: profileData } = await supabase.from("user_profiles").upsert({
           user_id: user.id,
@@ -159,19 +160,21 @@ export default function Auth() {
         });
         
         if (profileError) {
-          console.error("Error creating user profile:", profileError);
-          console.error("Profile error details:", {
+          console.warn("Warning: Could not create user profile:", profileError);
+          console.warn("Profile error details:", {
             message: profileError.message,
             code: profileError.code,
             details: profileError.details,
             hint: profileError.hint
           });
-          // 記錄錯誤但不阻止註冊流程
+          // 記錄警告但不阻止註冊流程
+          // user_profiles 可以稍後通過觸發器或其他方式創建
         } else {
           console.log("User profile created successfully:", profileData);
         }
       } catch (profileError: any) {
-        console.error("Exception creating user profile:", profileError);
+        console.warn("Warning: Exception creating user profile:", profileError);
+        // 記錄警告但不阻止註冊流程
       }
       
       // 登入成功，清除錯誤訊息並重新載入頁面
