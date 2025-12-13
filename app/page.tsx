@@ -118,7 +118,9 @@ export default function Home() {
                     🎉 恭喜您註冊成功！
                   </h3>
                   <p className="text-sm text-[#2c3e50]">
-                    您的 Email 已成功確認，現在可以開始使用所有功能了！
+                    {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('login_required') === 'true'
+                      ? "您的 Email 已成功確認！請使用您的帳號密碼登入。"
+                      : "您的 Email 已成功確認，現在可以開始使用所有功能了！"}
                   </p>
                 </div>
               </div>
