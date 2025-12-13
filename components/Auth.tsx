@@ -106,14 +106,24 @@ export default function Auth() {
     const user = data?.user;
     
     if (signUpError) {
+      // 記錄詳細錯誤以便調試
+      console.error("Sign up error:", signUpError);
+      console.error("Error message:", signUpError.message);
+      console.error("Error code:", signUpError.status);
+      
       // 顯示錯誤訊息
-      setError(translateError(signUpError.message, true));
+      const errorMsg = translateError(signUpError.message, true);
+      console.log("Translated error:", errorMsg);
+      setError(errorMsg);
       setLoading(false);
       return;
     }
     
     // 註冊成功
     if (user && user.id) {
+      console.log("User registered successfully:", user.id);
+      console.log("Email confirmed:", user.email_confirmed_at);
+      
       // 檢查是否需要 Email 確認
       if (!user.email_confirmed_at) {
         // Email 需要確認，顯示友善訊息
@@ -123,20 +133,25 @@ export default function Auth() {
       }
       
       // Email 已確認，嘗試自動登入
+      console.log("Attempting to sign in...");
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (signInError) {
+        console.error("Sign in error:", signInError);
         setError(translateError(signInError.message, false));
         setLoading(false);
         return;
       }
       
+      console.log("Sign in successful, creating user profile...");
+      
       // 登入成功後，創建 user_profiles 記錄
+      // 注意：即使失敗也不應該阻止註冊流程
       try {
-        const { error: profileError } = await supabase.from("user_profiles").upsert({
+        const { error: profileError, data: profileData } = await supabase.from("user_profiles").upsert({
           user_id: user.id,
           display_name: name || null,
         }, {
@@ -145,18 +160,29 @@ export default function Auth() {
         
         if (profileError) {
           console.error("Error creating user profile:", profileError);
+          console.error("Profile error details:", {
+            message: profileError.message,
+            code: profileError.code,
+            details: profileError.details,
+            hint: profileError.hint
+          });
           // 記錄錯誤但不阻止註冊流程
+        } else {
+          console.log("User profile created successfully:", profileData);
         }
       } catch (profileError: any) {
-        console.error("Error creating user profile:", profileError);
+        console.error("Exception creating user profile:", profileError);
       }
       
       // 登入成功，清除錯誤訊息並重新載入頁面
+      console.log("Registration complete, reloading page...");
       setError(null);
       window.location.reload();
     } else {
       // 註冊失敗
+      console.error("Registration failed: no user returned");
       setError("註冊失敗，請稍後再試。");
+      setLoading(false);
     }
     setLoading(false);
   };
