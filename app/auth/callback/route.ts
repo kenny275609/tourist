@@ -12,20 +12,54 @@ export async function GET(request: Request) {
   // 處理 Email 確認（使用 token_hash，這是 Supabase 推薦的方式）
   if (token_hash && type) {
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         type: type as 'email',
         token_hash,
       })
 
-      if (!error) {
-        // Email 確認成功，重定向到首頁並顯示成功訊息
+      if (error) {
+        console.error('Email verification error:', error)
+        console.error('Error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        })
+        
+        // 如果是 refresh token 錯誤，可能是驗證已成功但 session 建立失敗
+        // 這種情況下，用戶可能已經被確認，只是無法自動登入
+        if (error.message?.toLowerCase().includes('refresh token')) {
+          // 重定向到首頁，讓用戶手動登入
+          const redirectUrl = new URL('/', requestUrl.origin)
+          redirectUrl.searchParams.set('confirmed', 'true')
+          redirectUrl.searchParams.set('login_required', 'true')
+          return NextResponse.redirect(redirectUrl)
+        }
+        
+        // 其他錯誤，重定向到首頁
+        const redirectUrl = new URL('/', requestUrl.origin)
+        redirectUrl.searchParams.set('error', 'verification_failed')
+        return NextResponse.redirect(redirectUrl)
+      }
+
+      // Email 確認成功
+      if (data?.user || data?.session) {
+        // 確認成功，重定向到首頁並顯示成功訊息
         const redirectUrl = new URL('/', requestUrl.origin)
         redirectUrl.searchParams.set('confirmed', 'true')
         return NextResponse.redirect(redirectUrl)
       }
-    } catch (error) {
-      // 如果驗證失敗，繼續執行下面的邏輯
-      console.error('Email verification error:', error)
+      
+      // 如果沒有 user 或 session，但沒有錯誤，可能驗證成功但需要手動登入
+      const redirectUrl = new URL('/', requestUrl.origin)
+      redirectUrl.searchParams.set('confirmed', 'true')
+      redirectUrl.searchParams.set('login_required', 'true')
+      return NextResponse.redirect(redirectUrl)
+    } catch (error: any) {
+      // 如果驗證失敗，記錄錯誤並重定向
+      console.error('Email verification exception:', error)
+      const redirectUrl = new URL('/', requestUrl.origin)
+      redirectUrl.searchParams.set('error', 'verification_error')
+      return NextResponse.redirect(redirectUrl)
     }
   }
 

@@ -28,6 +28,7 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const confirmed = urlParams.get('confirmed');
+      const loginRequired = urlParams.get('login_required');
       
       if (confirmed === 'true') {
         setShowSuccessMessage(true);
@@ -35,7 +36,10 @@ export default function Home() {
         const timer = setTimeout(() => {
           setShowSuccessMessage(false);
           // 清除 URL 參數
-          window.history.replaceState({}, '', window.location.pathname);
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('confirmed');
+          newUrl.searchParams.delete('login_required');
+          window.history.replaceState({}, '', newUrl.pathname + newUrl.search);
         }, 5000);
         return () => clearTimeout(timer);
       }
