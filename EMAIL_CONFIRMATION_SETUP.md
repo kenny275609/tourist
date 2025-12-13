@@ -6,27 +6,43 @@
 
 ## 🔧 Supabase 設定
 
-### 步驟 1：設定 Email 確認重定向 URL
+### 步驟 1：找到您的生產環境 URL
+
+1. 前往 [Vercel Dashboard](https://vercel.com/dashboard)
+2. 選擇您的專案
+3. 在專案概覽頁面找到 **"Domains"** 區塊
+4. 記錄您的生產環境 URL（例如：`https://your-project.vercel.app`）
+
+### 步驟 2：設定 Email 確認重定向 URL
 
 1. 打開 Supabase Dashboard
 2. 點擊左側選單的 **"Authentication"**
 3. 點擊 **"URL Configuration"**
-4. 在 **"Redirect URLs"** 中添加：
-   ```
-   http://localhost:3000/auth/callback
-   https://your-domain.com/auth/callback
-   ```
-   （將 `your-domain.com` 替換為您的實際域名）
 
-5. 在 **"Site URL"** 中設定：
-   ```
-   http://localhost:3000
-   ```
-   （開發環境）或
-   ```
-   https://your-domain.com
-   ```
-   （生產環境）
+4. **設定 Site URL（重要！）**
+   - 在 **"Site URL"** 欄位中，輸入您的**生產環境 URL**：
+     ```
+     https://your-project.vercel.app
+     ```
+     或您的自訂域名：
+     ```
+     https://your-custom-domain.com
+     ```
+   - ⚠️ **不要使用 localhost**，這會導致 Email 確認連結指向 localhost
+   - 點擊 **"Save"**
+
+5. **添加 Redirect URLs**
+   - 在 **"Redirect URLs"** 區塊中，點擊 **"Add URL"**
+   - 添加以下 URL（每行一個）：
+     ```
+     http://localhost:3000/auth/callback
+     https://your-project.vercel.app/auth/callback
+     ```
+     如果您有自訂域名，也要添加：
+     ```
+     https://your-custom-domain.com/auth/callback
+     ```
+   - 點擊 **"Save"**
 
 ### 步驟 2：確認 Email 模板設定
 
